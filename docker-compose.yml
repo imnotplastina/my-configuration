@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+    database:
+        image: postgis/postgis:14-3.1-alpine
+        restart: unless-stopped
+        container_name: blv-database
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_DB=${DB_DATABASE}
+            - POSTGRES_USER=${DB_USERNAME}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+        volumes:
+            - ./storage/docker/_db:/val/lib/postgresql/data
+        networks:
+            - blv-database-network
+
+    app:
+        build:
+            context: ./
+            dockerfile: ./_docker/php/Dockerfile
+        user: ${UID}:${GID}
+        restart: unless-stopped
+        container_name: blv-app
+        volumes:
+            - ./:/var/www
+            - ./docker/php/extend-php.ini:/user/local/etc/php/conf.d/extend-php.ini
+        depends_on:
+            - database
+        networks:
+            blv-database-network:
+            blv-webserver-network:
+
+    webserver:
+        image: nginx:1.21.4-alpine
+        restart: unless-stopped
+        container_name: blv_webserver
+        volumes:
+            - ./:/var/www
+            - ./_docker/nginx/conf.d:/etc/nginx/conf.d
+            - ./storage/docker/logs/nginx:/var/log/nginx
+        ports:
+            - "8876:80"
+        depends_on:
+            - app
+        networks:
+            blv-webserver-network:
+
+networks:
+    blv-database-network:
+    blv-webserver-network:
+
+
