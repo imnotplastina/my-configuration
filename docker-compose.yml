@@ -20,7 +20,6 @@ services:
         build:
             context: ./
             dockerfile: ./_docker/php/Dockerfile
-        user: ${UID}:${GID}
         restart: unless-stopped
         container_name: blv-app
         volumes:
